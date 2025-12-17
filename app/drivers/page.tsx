@@ -131,6 +131,9 @@ export default function DriversPage() {
                   <th className="text-left p-4 text-sm font-semibold text-gray-700">
                     Total Rides
                   </th>
+                  <th className="text-left p-4 text-sm font-semibold text-gray-700">
+                    status
+                  </th>
                   <th className="text-right p-4 text-sm font-semibold text-gray-700">
                     Action
                   </th>
@@ -199,6 +202,11 @@ export default function DriversPage() {
                         <td className="p-4">
                           <p className="text-sm text-gray-900">
                             {driver.completedRides ?? 0}
+                          </p>
+                        </td>
+                        <td className="p-4">
+                          <p className="text-sm text-gray-900 bg-green-100 px-2 py-1 rounded-md w-max">
+                            {driver.status}
                           </p>
                         </td>
 
