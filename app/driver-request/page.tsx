@@ -6,7 +6,7 @@ import { MainLayout } from "@/components/layout/main-layout";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { driversApi, type DriverItem } from "@/lib/api";
+import { driversApi, type DriverItem, type DriversListResponse } from "@/lib/api";
 import { Trash2, MoreVertical, Check, X } from "lucide-react";
 import { toast } from "sonner";
 
@@ -26,17 +26,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-
-/**
- * If your driversApi.getAll(page) returns axios response sometimes,
- * and plain JSON other times, this helper normalizes it.
- */
-function normalizeDriversResponse(res: any) {
-  // axios response -> { data: {...} }
-  if (res?.data && typeof res.data === "object") return res.data;
-  // already body -> {...}
-  return res;
-}
 
 function initials(name: string) {
   return name
@@ -76,10 +65,10 @@ export default function DriverRequestPage() {
     isSuccess,
     error,
   } = useQuery({
-    queryKey: ["drivers", page],
+    queryKey: ["driver-requests", page],
     queryFn: async () => {
       const res = await driversApi.getAll(page);
-      return normalizeDriversResponse(res);
+      return res as DriversListResponse;
     },
     // keep old page rows while loading the next page
     placeholderData: (prev) => prev,
