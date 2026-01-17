@@ -5,24 +5,24 @@ import { useRouter } from "next/navigation"
 import { Bell } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useQuery } from "@tanstack/react-query"
-import { notificationApi, profileApi } from "@/lib/api" // assuming both are in the same file or imported correctly
-import ChangePasswordDialog from "@/app/settings/_components/chenge-password" // typo: probably "change-password"
+import { notificationApi, profileApi } from "@/lib/api"
+import ChangePasswordDialog from "@/app/settings/_components/chenge-password"
 
 export function Header() {
   const router = useRouter()
   const [open, setOpen] = useState(false)
 
-  // Fetch notifications
+  // 1. Fetch notifications using the SAME queryKey as the page for instant updates
   const { data: notificationsData } = useQuery({
     queryKey: ["notifications"],
-    queryFn: () => notificationApi.getAll(1).then((res) => res.data),
-    refetchInterval: 60000, // every 60 seconds
+    queryFn: () => notificationApi.getAll().then((res) => res.data),
+    refetchInterval: 30000, // Reduced to 30s for better UX
   })
 
-  const unreadCount =
-    notificationsData?.notifications?.filter((n: any) => !n.read).length || 0
+  // 2. FIXED: Correctly check .isRead and navigate nested data structure
+  const notifications = notificationsData?.data?.notifications || []
+  const unreadCount = notifications.filter((n: any) => !n.isRead).length
 
-  // Fetch user profile
   const { data: profileData, isLoading: profileLoading } = useQuery({
     queryKey: ["userProfile"],
     queryFn: () => profileApi.getProfile().then((res) => res.data.data),
@@ -41,18 +41,26 @@ export function Header() {
     <>
       <header className="fixed top-0 right-0 left-[173px] z-30 h-[70px] bg-white border-b border-border">
         <div className="flex h-full items-center justify-end px-6 gap-4">
-          {/* Notification Bell */}
+          
           <button
             onClick={() => router.push("/notifications")}
             className="relative p-2 hover:bg-gray-100 rounded-full transition-colors"
           >
             <Bell className="h-5 w-5 text-gray-600" />
             {unreadCount > 0 && (
-              <span className="absolute top-1 right-1 h-2 w-2 bg-red-500 rounded-full animate-pulse" />
+              <>
+                {/* Red Dot Animation */}
+                <span className="absolute top-2 right-2 h-2 w-2 bg-red-500 rounded-full" />
+                <span className="absolute top-2 right-2 h-2 w-2 bg-red-500 rounded-full animate-ping" />
+                
+                {/* Optional: Number count badge */}
+                <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-bold text-white">
+                  {unreadCount > 9 ? "9+" : unreadCount}
+                </span>
+              </>
             )}
           </button>
 
-          {/* User Profile Dropdown Trigger */}
           <button
             type="button"
             onClick={() => setOpen(true)}
@@ -75,7 +83,6 @@ export function Header() {
         </div>
       </header>
 
-      {/* Change Password Dialog */}
       <ChangePasswordDialog open={open} onOpenChange={setOpen} />
     </>
   )

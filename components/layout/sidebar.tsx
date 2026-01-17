@@ -37,7 +37,6 @@ const menuItems = [
   { icon: Users, label: "Drivers", href: "/drivers" },
   { icon: UserCheck, label: "Driver Request", href: "/driver-request" },
   { icon: History, label: "Ride History", href: "/ride-history" },
-  { icon: Tag, label: "Promo Code", href: "/promo-code" },
   { icon: Percent, label: "Commission", href: "/commission" },
   { icon: UserCircle, label: "Users Profile", href: "/users-profile" },
   { icon: Settings, label: "Settings", href: "/settings" },

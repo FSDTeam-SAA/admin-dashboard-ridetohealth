@@ -232,14 +232,12 @@ export const promoCodeApi = {
 
 // Commission API
 export const commissionApi = {
-  getAll: async (page = 1) => {
-    const res = await api.get<CommissionResponse>(`/api/admin/commission/history?page=${page}`)
-    return res.data
-  },
-
-  // ✅ create commission (exact payload)
-  create: (data: { date: string; commission: string }) => api.post("/api/admin/commission", data),
-}
+  getAll: (page = 1) => api.get(`/api/admin/commission/history?page=${page}`),
+  create: (data: any) => api.post("/api/admin/commission", data),
+  update: (id: string, data: any) => api.put(`/api/admin/commission/${id}`, data),
+  delete: (id: string) => api.delete(`/api/admin/commission/${id}`),
+  getById: (id: string) => api.get(`/api/admin/commission/${id}`),
+};
 
 // Driver Requests API
 export const driverRequestsApi = {
@@ -249,10 +247,15 @@ export const driverRequestsApi = {
 }
 
 
-/// notification api
+// notification api
 export const notificationApi = {
   getAll: (page = 1) => api.get(`/api/notification?page=${page}`),
+  
   markAsRead: (id: string) => api.put(`/api/notification/${id}/read`),
+  
+  // ADD THIS LINE:
+  markAllAsRead: () => api.put(`/api/notification/read-all`), 
+  
   delete: (id: string) => api.delete(`/api/notification/${id}`),
 };
 
