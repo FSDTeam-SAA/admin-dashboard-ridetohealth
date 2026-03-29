@@ -27,6 +27,7 @@ export default function ServicesPage() {
   const [page, setPage] = useState(1)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedService, setSelectedService] = useState<Service | null>(null)
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
   const queryClient = useQueryClient()
 
   const { data, isLoading } = useQuery({
@@ -42,6 +43,7 @@ export default function ServicesPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["services"] })
       toast.success("Service deleted successfully")
+      setDeleteConfirmId(null)
     },
     onError: () => {
       toast.error("Failed to delete service")
@@ -54,9 +56,15 @@ export default function ServicesPage() {
   }
 
   const handleDelete = (id: string) => {
-    if (confirm("Are you sure you want to delete this service?")) {
-      deleteMutation.mutate(id)
-    }
+    setDeleteConfirmId(id)
+  }
+
+  const confirmDelete = (id: string) => {
+    deleteMutation.mutate(id)
+  }
+
+  const cancelDelete = () => {
+    setDeleteConfirmId(null)
   }
 
   const handleAddNew = () => {
@@ -153,17 +161,42 @@ export default function ServicesPage() {
                             size="icon"
                             onClick={() => handleEdit(service)}
                             className="h-9 w-9 hover:bg-gray-100"
+                            disabled={deleteConfirmId === service._id}
                           >
                             <Pencil className="h-4 w-4 text-gray-600" />
                           </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleDelete(service._id)}
-                            className="h-9 w-9 hover:bg-red-50"
-                          >
-                            <Trash2 className="h-4 w-4 text-red-600" />
-                          </Button>
+
+                          {deleteConfirmId === service._id ? (
+                            <>
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                onClick={cancelDelete}
+                                disabled={deleteMutation.isPending}
+                              >
+                                No
+                              </Button>
+                              <Button
+                                type="button"
+                                size="sm"
+                                onClick={() => confirmDelete(service._id)}
+                                disabled={deleteMutation.isPending}
+                                className="bg-red-600 hover:bg-red-700 text-white"
+                              >
+                                {deleteMutation.isPending && deleteMutation.variables === service._id ? "Deleting..." : "Yes"}
+                              </Button>
+                            </>
+                          ) : (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleDelete(service._id)}
+                              className="h-9 w-9 hover:bg-red-50"
+                            >
+                              <Trash2 className="h-4 w-4 text-red-600" />
+                            </Button>
+                          )}
                         </div>
                       </td>
                     </tr>

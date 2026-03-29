@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import {
+  keepPreviousData,
   useQuery,
   useMutation,
   useQueryClient,
@@ -86,13 +87,13 @@ export default function RideHistoryPage() {
   const queryClient = useQueryClient();
 
   /* ---------- FETCH RIDES ---------- */
-  const { data, isLoading } = useQuery({
+  const { data, isLoading } = useQuery<TripHistoryResponse>({
     queryKey: ["rides", page],
     queryFn: async () => {
       const res = await ridesApi.getAll(page);
       return res.data as TripHistoryResponse;
     },
-    keepPreviousData: true,
+    placeholderData: keepPreviousData,
   });
 
   const rides = data?.data?.rides ?? [];

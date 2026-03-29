@@ -19,19 +19,27 @@ export function Header() {
     refetchInterval: 30000, // Reduced to 30s for better UX
   })
 
-  // 2. FIXED: Correctly check .isRead and navigate nested data structure
-  const notifications = notificationsData?.data?.notifications || []
-  const unreadCount = notifications.filter((n: any) => !n.isRead).length
+  const notifications = Array.isArray(notificationsData?.data?.notifications)
+    ? notificationsData.data.notifications
+    : []
+  const unreadCount = notifications.reduce(
+    (count: number, n: any) => (n?.isRead ? count : count + 1),
+    0,
+  )
 
   const { data: profileData, isLoading: profileLoading } = useQuery({
     queryKey: ["userProfile"],
     queryFn: () => profileApi.getProfile().then((res) => res.data.data),
   })
 
-  const fullName = profileData?.fullName || "Admin"
-  const profileImage = profileData?.profileImage || null
+  const fullName =
+    typeof profileData?.fullName === "string" && profileData.fullName.trim().length > 0
+      ? profileData.fullName
+      : "Admin"
+  const profileImage = typeof profileData?.profileImage === "string" ? profileData.profileImage : null
   const initials = fullName
     .split(" ")
+    .filter(Boolean)
     .map((n: string) => n[0])
     .join("")
     .toUpperCase()

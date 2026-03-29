@@ -14,6 +14,11 @@ function monthLabel(year: number, month: number) {
   return d.toLocaleString("en-US", { month: "short" })
 }
 
+function toSafeNumber(value: unknown): number {
+  const parsed = typeof value === "number" ? value : Number(value)
+  return Number.isFinite(parsed) ? parsed : 0
+}
+
 export function ActiveDriversChart() {
   const [period, setPeriod] = useState<"6months" | "years">("6months")
 
@@ -22,22 +27,33 @@ export function ActiveDriversChart() {
     queryFn: dashboardApi.getStats,
   })
 
-  const monthly = data?.data?.monthlyStats ?? []
+  const monthly = Array.isArray(data?.data?.monthlyStats) ? data.data.monthlyStats : []
 
   // Simple slicing logic (assuming backend returns chronological order; if not, sort it)
   const sorted = [...monthly].sort(
     (a, b) =>
-      a._id.year - b._id.year || a._id.month - b._id.month
+      toSafeNumber(a?._id?.year) - toSafeNumber(b?._id?.year) || toSafeNumber(a?._id?.month) - toSafeNumber(b?._id?.month),
   )
 
   const filtered = period === "6months" ? sorted.slice(-6) : sorted.slice(-12)
 
-  const chartData = filtered.map((m) => ({
-    month: monthLabel(m._id.year, m._id.month),
-    rides: m.rides ?? 0,
-  }))
+  const chartData = filtered.flatMap((item: any) => {
+    const year = Number(item?._id?.year)
+    const month = Number(item?._id?.month)
 
-  const totalRides = data?.data?.overview?.totalRides ?? 0
+    if (!Number.isInteger(year) || !Number.isInteger(month) || month < 1 || month > 12) {
+      return []
+    }
+
+    return [
+      {
+        month: monthLabel(year, month),
+        rides: toSafeNumber(item?.rides),
+      },
+    ]
+  })
+
+  const totalRides = toSafeNumber(data?.data?.overview?.totalRides)
 
   return (
     <Card className="border-gray-200">

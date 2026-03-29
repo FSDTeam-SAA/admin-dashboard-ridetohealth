@@ -174,7 +174,8 @@ export const taxiApi = {
   getAll: (page = 1) => api.get(`/api/admin/vehicle?page=${page}`),
   getSingle: (serviceId: string) => api.get(`/api/service/vehicle/${serviceId}`),
   create: (serviceId: string, data: any) => api.post(`/api/admin/services/${serviceId}/vehicle`, data),
-  update: (vehicleId: string, driverId: string) =>
+  update: (vehicleId: string, data: any) => api.put(`/api/admin/services/vehicle/${vehicleId}`, data),
+  assignDriver: (vehicleId: string, driverId: string) =>
     api.put("/api/admin/services/vehicle/assign-vehicle", { vehicleId, driverId }),
   delete: (id: string) => api.delete(`/api/admin/services/vehicle/${id}`),
 }
@@ -258,4 +259,3 @@ export const notificationApi = {
   
   delete: (id: string) => api.delete(`/api/notification/${id}`),
 };
-

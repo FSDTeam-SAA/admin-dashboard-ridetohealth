@@ -12,17 +12,33 @@ function monthLabel(year: number, month: number) {
   return d.toLocaleString("en-US", { month: "short", year: "numeric" }) // "Dec 2025"
 }
 
+function toSafeNumber(value: unknown): number {
+  const parsed = typeof value === "number" ? value : Number(value)
+  return Number.isFinite(parsed) ? parsed : 0
+}
+
 export function RevenueChart() {
   const { data, isLoading } = useQuery({
     queryKey: ["dashboardStats"],
     queryFn: dashboardApi.getStats,
   })
 
-  const chartData =
-    data?.data?.monthlyStats?.map((m) => ({
-      month: monthLabel(m._id.year, m._id.month),
-      revenue: m.revenue ?? 0,
-    })) ?? []
+  const monthlyStats = Array.isArray(data?.data?.monthlyStats) ? data.data.monthlyStats : []
+  const chartData = monthlyStats.flatMap((item: any) => {
+    const year = Number(item?._id?.year)
+    const month = Number(item?._id?.month)
+
+    if (!Number.isInteger(year) || !Number.isInteger(month) || month < 1 || month > 12) {
+      return []
+    }
+
+    return [
+      {
+        month: monthLabel(year, month),
+        revenue: toSafeNumber(item?.revenue),
+      },
+    ]
+  })
 
   return (
     <Card className="border-gray-200">
@@ -47,7 +63,7 @@ export function RevenueChart() {
                   borderRadius: "8px",
                   color: "white",
                 }}
-                formatter={(value: number) => [`$${value}`, "Revenue"]}
+                formatter={(value: unknown) => [`$${toSafeNumber(value).toLocaleString()}`, "Revenue"]}
               />
               <Line type="monotone" dataKey="revenue" stroke="#22c55e" strokeWidth={2} dot={{ r: 4 }} />
             </LineChart>

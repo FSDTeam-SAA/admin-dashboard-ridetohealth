@@ -6,6 +6,11 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { DollarSign, Users, Car, UserCheck } from "lucide-react"
 import { dashboardApi } from "@/lib/api"
 
+function toSafeNumber(value: unknown): number {
+  const parsed = typeof value === "number" ? value : Number(value)
+  return Number.isFinite(parsed) ? parsed : 0
+}
+
 export function DashboardStats() {
   const { data, isLoading } = useQuery({
     queryKey: ["dashboardStats"],
@@ -17,28 +22,28 @@ export function DashboardStats() {
   const stats = [
     {
       title: "Total Revenue",
-      value: overview ? `$${(overview.totalRevenue ?? 0).toLocaleString()}` : "$0",
+      value: `$${toSafeNumber(overview?.totalRevenue).toLocaleString()}`,
       icon: DollarSign,
       iconBg: "bg-green-100",
       iconColor: "text-green-600",
     },
     {
       title: "Total Drivers",
-      value: (overview?.totalDrivers ?? 0).toLocaleString(),
+      value: toSafeNumber(overview?.totalDrivers).toLocaleString(),
       icon: Users,
       iconBg: "bg-pink-100",
       iconColor: "text-pink-600",
     },
     {
       title: "Total Rides",
-      value: (overview?.totalRides ?? 0).toLocaleString(),
+      value: toSafeNumber(overview?.totalRides).toLocaleString(),
       icon: Car,
       iconBg: "bg-yellow-100",
       iconColor: "text-yellow-600",
     },
     {
       title: "Total Users",
-      value: (overview?.totalUsers ?? 0).toLocaleString(),
+      value: toSafeNumber(overview?.totalUsers).toLocaleString(),
       icon: UserCheck,
       iconBg: "bg-blue-100",
       iconColor: "text-blue-600",

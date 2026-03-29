@@ -195,7 +195,7 @@ export default function DriversPage() {
   // ASSIGN VEHICLE
   const assignVehicleMutation = useMutation({
     mutationFn: (payload: { vehicleId: string; driverId: string }) =>
-      taxiApi.update(payload.vehicleId, payload.driverId),
+      taxiApi.assignDriver(payload.vehicleId, payload.driverId),
     onSuccess: () => {
       toast.success("Vehicle assigned successfully");
       queryClient.invalidateQueries({ queryKey: ["drivers"] });

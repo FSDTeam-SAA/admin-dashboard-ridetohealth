@@ -130,9 +130,9 @@ export function ServiceModal({ isOpen, onClose, service }: ServiceModalProps) {
           </div>
 
           {/* Rates Section */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="">
             {/* Per KM Rate */}
-            <div className="space-y-2">
+            {/* <div className="space-y-2">
               <Label htmlFor="perKmRate">Per KM Rate ($)</Label>
               <Input
                 id="perKmRate"
@@ -146,7 +146,7 @@ export function ServiceModal({ isOpen, onClose, service }: ServiceModalProps) {
                 placeholder="0.00"
                 required
               />
-            </div>
+            </div> */}
 
             {/* Per Mile Rate */}
             <div className="space-y-2">

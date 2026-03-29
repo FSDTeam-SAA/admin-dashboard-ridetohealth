@@ -10,7 +10,7 @@ export default function VerifyOTPForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const email = searchParams.get("email") || ""
-  const type = searchParams.get("type")
+  const type = searchParams.get("type") || "password_reset"
 
   const [isLoading, setIsLoading] = useState(false)
   const [otp, setOtp] = useState(["", "", "", "", "", ""])
@@ -95,7 +95,9 @@ export default function VerifyOTPForm() {
             {otp.map((digit, index) => (
               <input
                 key={index}
-                ref={(el) => (inputRefs.current[index] = el)}
+                ref={(el) => {
+                  inputRefs.current[index] = el
+                }}
                 type="text"
                 inputMode="numeric"
                 maxLength={1}

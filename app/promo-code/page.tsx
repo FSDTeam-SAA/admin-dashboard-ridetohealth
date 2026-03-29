@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { keepPreviousData, useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { MainLayout } from "@/components/layout/main-layout"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -86,16 +86,16 @@ export default function PromoCodePage() {
 
   const queryClient = useQueryClient()
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading } = useQuery<PromoCodesResponse>({
     queryKey: ["promoCodes", page],
     queryFn: async () => {
       const res = await promoCodeApi.getAll(page)
       return res.data as PromoCodesResponse
     },
-    keepPreviousData: true,
+    placeholderData: keepPreviousData,
   })
 
-  const promoCodes = useMemo(() => data?.data?.promoCodes ?? [], [data])
+  const promoCodes = useMemo<PromoCode[]>(() => data?.data?.promoCodes ?? [], [data])
   const totalPages = data?.data?.pagination?.pages ?? 1
 
   const deleteMutation = useMutation({

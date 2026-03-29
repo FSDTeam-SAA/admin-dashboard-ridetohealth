@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { keepPreviousData, useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { MainLayout } from "@/components/layout/main-layout"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
@@ -141,16 +141,16 @@ export default function UsersProfilePage() {
   const [detailsOpen, setDetailsOpen] = useState(false)
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null)
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading } = useQuery<UsersResponse>({
     queryKey: ["users", page],
     queryFn: async () => {
       const res = await usersApi.getAll(page)
       return res.data as UsersResponse
     },
-    keepPreviousData: true,
+    placeholderData: keepPreviousData,
   })
 
-  const users = useMemo(() => data?.data?.users ?? [], [data])
+  const users = useMemo<ApiUser[]>(() => data?.data?.users ?? [], [data])
   const totalPages = data?.data?.pagination?.pages ?? 1
 
   const deleteMutation = useMutation({
