@@ -95,7 +95,6 @@ export default function ServicesPage() {
                 <tr>
                   <th className="text-left p-4 text-sm font-semibold text-gray-700">Services Name</th>
                   <th className="text-left p-4 text-sm font-semibold text-gray-700">Added</th>
-                  <th className="text-left p-4 text-sm font-semibold text-gray-700">perKmRate</th>
                   <th className="text-left p-4 text-sm font-semibold text-gray-700">perMileRate</th>
                   <th className="text-right p-4 text-sm font-semibold text-gray-700">Actions</th>
                 </tr>
@@ -147,9 +146,6 @@ export default function ServicesPage() {
                             day: "2-digit",
                           })}
                         </p>
-                      </td>
-                      <td className="p-4">
-                        <p className="text-sm text-gray-600">{service.perKmRate}</p>
                       </td>
                       <td className="p-4">
                         <p className="text-sm text-gray-600">{service.perMileRate}</p>
