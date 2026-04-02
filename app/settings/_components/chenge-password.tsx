@@ -32,10 +32,7 @@ export default function ChangePasswordDialog({ open, onOpenChange }: Props) {
 
   const changePasswordMutation = useMutation({
     mutationFn: (data: { currentPassword: string; newPassword: string }) =>
-      authApi.changePassword({
-        oldPassword: data.currentPassword,
-        newPassword: data.newPassword,
-      }),
+      authApi.changePassword(data),
     onSuccess: () => {
       toast.success("Password changed successfully")
       onOpenChange(false)

@@ -106,7 +106,8 @@ export const authApi = {
   requestPasswordReset: (data: { emailOrPhone: string }) => api.post("/api/auth/request-password-reset", data),
   verifyOTP: (data: { email: string; otp: string; type: string }) => api.post("/api/auth/verify-otp", data),
   resetPassword: (data: { emailOrPhone: string; newPassword: string }) => api.post("/api/auth/reset-password", data),
-  changePassword: (data: { oldPassword: string; newPassword: string }) => api.post("/api/auth/change-password", data),
+  changePassword: (data: { currentPassword: string; newPassword: string }) =>
+    api.post("/api/auth/change-password", data),
 }
 
 
