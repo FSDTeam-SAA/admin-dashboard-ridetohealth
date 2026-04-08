@@ -33,6 +33,9 @@ export function ServiceModal({ isOpen, onClose, service }: ServiceModalProps) {
     serviceImage: null as File | null,
     previewImage: "",
   })
+  const [formErrors, setFormErrors] = useState({
+    serviceImage: "",
+  })
 
   const queryClient = useQueryClient()
 
@@ -57,7 +60,8 @@ export function ServiceModal({ isOpen, onClose, service }: ServiceModalProps) {
         previewImage: "",
       })
     }
-  }, [service])
+    setFormErrors({ serviceImage: "" })
+  }, [service, isOpen])
 
   const mutation = useMutation({
     mutationFn: async (data: FormData) => {
@@ -71,13 +75,29 @@ export function ServiceModal({ isOpen, onClose, service }: ServiceModalProps) {
       toast.success(service ? "Service updated successfully" : "Service created successfully")
       onClose()
     },
-    onError: () => {
-      toast.error(service ? "Failed to update service" : "Failed to create service")
+    onError: (error: any) => {
+      const message =
+        error?.response?.data?.message ||
+        error?.message ||
+        (service ? "Failed to update service" : "Failed to create service")
+
+      if (message.toLowerCase().includes("image")) {
+        setFormErrors({ serviceImage: message })
+        return
+      }
+
+      toast.error(message)
     },
   })
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+    setFormErrors({ serviceImage: "" })
+
+    if (!service && !formData.serviceImage) {
+      setFormErrors({ serviceImage: "Image is required" })
+      return
+    }
 
     const data = new FormData()
     data.append("name", formData.name)
@@ -173,9 +193,11 @@ export function ServiceModal({ isOpen, onClose, service }: ServiceModalProps) {
               id="image"
               type="file"
               accept="image/*"
+              aria-invalid={Boolean(formErrors.serviceImage)}
               onChange={(e) => {
                 const file = e.target.files?.[0]
                 if (file) {
+                  setFormErrors({ serviceImage: "" })
                   setFormData({
                     ...formData,
                     serviceImage: file,
@@ -184,6 +206,9 @@ export function ServiceModal({ isOpen, onClose, service }: ServiceModalProps) {
                 }
               }}
             />
+            {formErrors.serviceImage ? (
+              <p className="text-sm text-red-600">{formErrors.serviceImage}</p>
+            ) : null}
           </div>
 
           {/* Image Preview */}

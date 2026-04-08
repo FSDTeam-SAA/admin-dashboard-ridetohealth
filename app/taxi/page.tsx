@@ -22,6 +22,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import Image from "next/image";
 
+const FALLBACK_TAXI_IMAGE = "/taxi-car.jpg";
+
 interface Taxi {
   _id: string;
   taxiName: string;
@@ -166,14 +168,17 @@ export default function TaxiPage() {
                         <div className="flex items-center gap-3">
                           <div className="h-12 w-20 bg-gray-100 rounded overflow-hidden flex items-center justify-center">
                             <Image
-                              src={taxi.serviceId?.serviceImage || "/fallback-taxi.png"}
+                              src={taxi.serviceId?.serviceImage || FALLBACK_TAXI_IMAGE}
                               width={500}
                               height={500}
                               alt={`${taxi.taxiName} service`}
                               className="h-full w-full "
                               onError={(e) => {
-                                // Fallback if image fails to load
-                                (e.target as HTMLImageElement).src = "/fallback-taxi.png";
+                                if (e.currentTarget.src.endsWith(FALLBACK_TAXI_IMAGE)) {
+                                  return;
+                                }
+
+                                e.currentTarget.src = FALLBACK_TAXI_IMAGE;
                               }}
                             />
                           </div>
