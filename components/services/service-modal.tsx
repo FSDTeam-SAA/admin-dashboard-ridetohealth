@@ -72,6 +72,7 @@ export function ServiceModal({ isOpen, onClose, service }: ServiceModalProps) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["services"] })
+      queryClient.invalidateQueries({ queryKey: ["services-list"] })
       toast.success(service ? "Service updated successfully" : "Service created successfully")
       onClose()
     },

@@ -11,6 +11,8 @@ import { servicesApi } from "@/lib/api"
 import { toast } from "sonner"
 import { Pencil, Trash2, Plus } from "lucide-react"
 
+const FALLBACK_IMAGE = "/placeholder.svg"
+
 interface Service {
   _id: string
   name: string
@@ -42,6 +44,7 @@ export default function ServicesPage() {
     mutationFn: (id: string) => servicesApi.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["services"] })
+      queryClient.invalidateQueries({ queryKey: ["services-list"] })
       toast.success("Service deleted successfully")
       setDeleteConfirmId(null)
     },
@@ -71,6 +74,9 @@ export default function ServicesPage() {
     setSelectedService(null)
     setIsModalOpen(true)
   }
+
+  const services: Service[] = data?.data ?? []
+  const totalPages: number = data?.totalPages ?? 1
 
   return (
     <MainLayout>
@@ -114,6 +120,9 @@ export default function ServicesPage() {
                           <Skeleton className="h-6 w-24" />
                         </td>
                         <td className="p-4">
+                          <Skeleton className="h-6 w-16" />
+                        </td>
+                        <td className="p-4">
                           <div className="flex justify-end gap-2">
                             <Skeleton className="h-9 w-9" />
                             <Skeleton className="h-9 w-9" />
@@ -122,15 +131,20 @@ export default function ServicesPage() {
                       </tr>
                     ))}
                   </>
-                ) : data?.data?.length > 0 ? (
-                  data.data.map((service: Service) => (
+                ) : services.length > 0 ? (
+                  services.map((service) => (
                     <tr key={service._id} className="border-b border-gray-200 last:border-0 hover:bg-gray-50">
                       <td className="p-4">
                         <div className="flex items-center gap-3">
                           <img
-                            src={service.serviceImage || "/placeholder.svg?height=48&width=64"}
+                            src={service.serviceImage || FALLBACK_IMAGE}
                             alt={service.name}
-                            className="h-12 w-16 object-cover rounded"
+                            className="h-12 w-16 object-cover rounded bg-gray-100"
+                            onError={(e) => {
+                              if (e.currentTarget.src !== window.location.origin + FALLBACK_IMAGE) {
+                                e.currentTarget.src = FALLBACK_IMAGE
+                              }
+                            }}
                           />
                           <div>
                             <p className="font-semibold text-gray-900">{service.name}</p>
@@ -180,7 +194,9 @@ export default function ServicesPage() {
                                 disabled={deleteMutation.isPending}
                                 className="bg-red-600 hover:bg-red-700 text-white"
                               >
-                                {deleteMutation.isPending && deleteMutation.variables === service._id ? "Deleting..." : "Yes"}
+                                {deleteMutation.isPending && deleteMutation.variables === service._id
+                                  ? "Deleting..."
+                                  : "Yes"}
                               </Button>
                             </>
                           ) : (
@@ -199,7 +215,7 @@ export default function ServicesPage() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={3} className="p-8 text-center text-gray-500">
+                    <td colSpan={4} className="p-8 text-center text-gray-500">
                       No services found
                     </td>
                   </tr>
@@ -208,9 +224,9 @@ export default function ServicesPage() {
             </table>
           </div>
 
-          {data?.totalPages > 1 && (
+          {totalPages > 1 && (
             <div className="p-4 border-t border-gray-200">
-              <PaginationControls currentPage={page} totalPages={data.totalPages} onPageChange={setPage} />
+              <PaginationControls currentPage={page} totalPages={totalPages} onPageChange={setPage} />
             </div>
           )}
         </div>

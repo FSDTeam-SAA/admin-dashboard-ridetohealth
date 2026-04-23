@@ -30,7 +30,7 @@ import { Loader2 } from "lucide-react"
 interface CommissionModalProps {
   isOpen: boolean
   onClose: () => void
-  initialData?: any 
+  initialData?: any
 }
 
 export function CommissionModal({ isOpen, onClose, initialData }: CommissionModalProps) {
@@ -48,13 +48,18 @@ export function CommissionModal({ isOpen, onClose, initialData }: CommissionModa
     applicableServices: [] as string[],
   })
 
-  const { data: servicesResponse, isLoading: isLoadingServices } = useQuery({
+  // Normalized to match taxi-modal queryFn — both share the ["services-list"] cache key
+  const { data: servicesData, isLoading: isLoadingServices } = useQuery({
     queryKey: ["services-list"],
-    queryFn: () => servicesApi.getAll(1),
+    queryFn: async () => {
+      const res = await servicesApi.getAll(1)
+      return res.data
+    },
     enabled: isOpen,
   })
 
-  const servicesList = servicesResponse?.data?.data || []
+  // servicesData = { success, data: [...], totalPages }
+  const servicesList = servicesData?.data || []
 
   useEffect(() => {
     if (isOpen) {
@@ -67,8 +72,7 @@ export function CommissionModal({ isOpen, onClose, initialData }: CommissionModa
           startDate: initialData.startDate ? new Date(initialData.startDate).toISOString().split("T")[0] : "",
           endDate: initialData.endDate ? new Date(initialData.endDate).toISOString().split("T")[0] : "",
           status: initialData.status || "active",
-          // Handle cases where backend might return a single ID or an array
-          applicableServices: Array.isArray(initialData.applicableServices) 
+          applicableServices: Array.isArray(initialData.applicableServices)
             ? initialData.applicableServices.map((s: any) => s._id || s)
             : initialData.applicableServices ? [initialData.applicableServices] : [],
         })
@@ -127,8 +131,8 @@ export function CommissionModal({ isOpen, onClose, initialData }: CommissionModa
     const payload = {
       ...formData,
       commission: Number(formData.commission),
-      isActive: formData.status === "active", // Sync isActive with status for backend
-      endDate: formData.endDate || undefined, 
+      isActive: formData.status === "active",
+      endDate: formData.endDate || undefined,
     }
 
     mutation.mutate(payload)
@@ -143,130 +147,146 @@ export function CommissionModal({ isOpen, onClose, initialData }: CommissionModa
           </DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-6 pb-6 space-y-5">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="md:col-span-2 space-y-2">
-              <Label htmlFor="title">Rule Title *</Label>
-              <Input
-                id="title"
-                value={formData.title}
-                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                required
+        {/* Form wraps both the scrollable fields and the footer so type="submit" works correctly */}
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
+          <div className="flex-1 overflow-y-auto px-6 pb-6 space-y-5">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="md:col-span-2 space-y-2">
+                <Label htmlFor="title">Rule Title *</Label>
+                <Input
+                  id="title"
+                  value={formData.title}
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="status">Status</Label>
+                <Select
+                  value={formData.status}
+                  onValueChange={(val) => setFormData({ ...formData, status: val })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="inactive">Inactive</SelectItem>
+                    <SelectItem value="expired">Expired</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="description">Description (Optional)</Label>
+              <Textarea
+                id="description"
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                className="h-20"
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="status">Status</Label>
-              <Select
-                value={formData.status}
-                onValueChange={(val) => setFormData({ ...formData, status: val })}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
-                  <SelectItem value="expired">Expired</SelectItem>
-                </SelectContent>
-              </Select>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Commission Type</Label>
+                <Select
+                  value={formData.discountType}
+                  onValueChange={(val) => setFormData({ ...formData, discountType: val })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="percentage">Percentage (%)</SelectItem>
+                    <SelectItem value="fixed">Fixed Amount ($)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Value *</Label>
+                <Input
+                  type="number"
+                  value={formData.commission}
+                  onChange={(e) => setFormData({ ...formData, commission: e.target.value })}
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Start Date</Label>
+                <Input
+                  type="date"
+                  value={formData.startDate}
+                  onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>End Date</Label>
+                <Input
+                  type="date"
+                  value={formData.endDate}
+                  onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <Label className="font-semibold">Select Applicable Services *</Label>
+              <div className="border rounded-lg bg-gray-50 overflow-hidden">
+                <ScrollArea className="h-48 px-4 py-2">
+                  {isLoadingServices ? (
+                    <div className="flex justify-center p-8">
+                      <Loader2 className="animate-spin" />
+                    </div>
+                  ) : servicesList.length === 0 ? (
+                    <p className="text-sm text-gray-500 p-4 text-center">No services found</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {servicesList.map((service: any) => (
+                        <div
+                          key={service._id}
+                          className="flex items-center space-x-3 p-2 bg-white rounded border border-gray-100 hover:border-primary/50 transition-colors"
+                        >
+                          <Checkbox
+                            id={service._id}
+                            checked={formData.applicableServices.includes(service._id)}
+                            onCheckedChange={() => toggleService(service._id)}
+                          />
+                          <label htmlFor={service._id} className="flex-1 text-sm font-medium cursor-pointer">
+                            {service.name}
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </ScrollArea>
+              </div>
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="description">Description (Optional)</Label>
-            <Textarea
-              id="description"
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              className="h-20"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Commission Type</Label>
-              <Select
-                value={formData.discountType}
-                onValueChange={(val) => setFormData({ ...formData, discountType: val })}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="percentage">Percentage (%)</SelectItem>
-                  <SelectItem value="fixed">Fixed Amount ($)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Value *</Label>
-              <Input
-                type="number"
-                value={formData.commission}
-                onChange={(e) => setFormData({ ...formData, commission: e.target.value })}
-                required
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Start Date</Label>
-              <Input
-                type="date"
-                value={formData.startDate}
-                onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>End Date</Label>
-              <Input
-                type="date"
-                value={formData.endDate}
-                onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-              />
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            <Label className="font-semibold">Select Applicable Services *</Label>
-            <div className="border rounded-lg bg-gray-50 overflow-hidden">
-              <ScrollArea className="h-48 px-4 py-2">
-                {isLoadingServices ? (
-                  <div className="flex justify-center p-8"><Loader2 className="animate-spin" /></div>
-                ) : (
-                  <div className="space-y-2">
-                    {servicesList.map((service: any) => (
-                      <div key={service._id} className="flex items-center space-x-3 p-2 bg-white rounded border border-gray-100 hover:border-primary/50 transition-colors">
-                        <Checkbox
-                          id={service._id}
-                          checked={formData.applicableServices.includes(service._id)}
-                          onCheckedChange={() => toggleService(service._id)}
-                        />
-                        <label htmlFor={service._id} className="flex-1 text-sm font-medium cursor-pointer">
-                          {service.name}
-                        </label>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </ScrollArea>
-            </div>
-          </div>
+          <DialogFooter className="p-6 border-t bg-gray-50">
+            <Button type="button" variant="outline" onClick={onClose} disabled={mutation.isPending}>
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              disabled={mutation.isPending}
+              className="bg-[#8B0000] hover:bg-[#700000] min-w-30"
+            >
+              {mutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : isEditMode ? (
+                "Save Changes"
+              ) : (
+                "Create Rule"
+              )}
+            </Button>
+          </DialogFooter>
         </form>
-
-        <DialogFooter className="p-6 border-t bg-gray-50">
-          <Button variant="outline" onClick={onClose} disabled={mutation.isPending}>
-            Cancel
-          </Button>
-          <Button
-            onClick={handleSubmit}
-            disabled={mutation.isPending}
-            className="bg-[#8B0000] hover:bg-[#700000] min-w-[120px]"
-          >
-            {mutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : isEditMode ? "Save Changes" : "Create Rule"}
-          </Button>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   )
