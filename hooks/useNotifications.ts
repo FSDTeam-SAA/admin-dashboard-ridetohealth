@@ -11,14 +11,14 @@ export function useNotifications() {
     staleTime: 30000, // 30 seconds
   });
   
-  const unreadCount = data?.notifications?.filter((n: any) => !n.isRead).length || 0;
-  
+  const unreadCount = data?.data?.notifications?.filter((n: any) => !n.isRead).length || 0;
+
   const invalidateNotifications = () => {
     queryClient.invalidateQueries({ queryKey: ["notifications"] });
   };
-  
+
   return {
-    notifications: data?.notifications || [],
+    notifications: data?.data?.notifications || [],
     unreadCount,
     invalidateNotifications,
     ...rest

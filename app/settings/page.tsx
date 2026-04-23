@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { MainLayout } from "@/components/layout/main-layout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -24,88 +25,70 @@ interface ProfileData {
 }
 
 export default function SettingsPage() {
+  const queryClient = useQueryClient()
   const [profile, setProfile] = useState<ProfileData>({})
   const [originalProfile, setOriginalProfile] = useState<ProfileData>({})
-  const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
-  const [uploadingImage, setUploadingImage] = useState(false)
-  const [imageFile, setImageFile] = useState<File | null>(null)
   const [preview, setPreview] = useState("")
   const [openChangePassword, setOpenChangePassword] = useState(false)
 
-  // Fetch profile
+  const { data: profileData, isLoading } = useQuery({
+    queryKey: ["userProfile"],
+    queryFn: async () => {
+      const res = await profileApi.getProfile()
+      return res.data.data as ProfileData
+    },
+  })
+
   useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        setLoading(true)
-        const res = await profileApi.getProfile()
-        const data = res.data.data
-        setProfile(data)
-        setOriginalProfile(data)
-        setPreview(data.profileImage || "")
-      } catch {
-        toast.error("Failed to load profile")
-      } finally {
-        setLoading(false)
-      }
+    if (profileData) {
+      setProfile(profileData)
+      setOriginalProfile(profileData)
+      setPreview(profileData.profileImage || "")
     }
-    fetchProfile()
-  }, [])
+  }, [profileData])
+
+  const updateProfileMutation = useMutation({
+    mutationFn: (data: Partial<ProfileData>) => profileApi.updateProfile(data),
+    onSuccess: () => {
+      setOriginalProfile(profile)
+      queryClient.invalidateQueries({ queryKey: ["userProfile"] })
+      toast.success("Profile updated successfully")
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.message || "Failed to update profile")
+    },
+  })
+
+  const uploadImageMutation = useMutation({
+    mutationFn: (file: File) => profileApi.uploadProfileImage(file),
+    onSuccess: (res) => {
+      const imageUrl = res.data.data.profileImage
+      setProfile((prev) => ({ ...prev, profileImage: imageUrl }))
+      setOriginalProfile((prev) => ({ ...prev, profileImage: imageUrl }))
+      setPreview(imageUrl)
+      queryClient.invalidateQueries({ queryKey: ["userProfile"] })
+      toast.success("Profile image updated")
+    },
+    onError: () => {
+      toast.error("Failed to upload image")
+    },
+  })
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target
-    setProfile(prev => ({ ...prev, [id]: value }))
+    setProfile((prev) => ({ ...prev, [id]: value }))
   }
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
-    setImageFile(file)
     setPreview(URL.createObjectURL(file))
+    uploadImageMutation.mutate(file)
   }
 
-  // Save profile info
-  const saveProfile = async () => {
-    setSaving(true)
-    try {
-      await profileApi.updateProfile(profile)
-      setOriginalProfile(profile)
-      toast.success("Profile updated successfully")
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || "Failed to update profile")
-    } finally {
-      setSaving(false)
-    }
-  }
+  const hasChanges = JSON.stringify(profile) !== JSON.stringify(originalProfile)
 
-  // Upload image automatically
-  useEffect(() => {
-    if (!imageFile) return
-
-    const uploadImage = async () => {
-      setUploadingImage(true)
-      try {
-        const res = await profileApi.uploadProfileImage(imageFile)
-        const imageUrl = res.data.data.profileImage
-        setProfile(prev => ({ ...prev, profileImage: imageUrl }))
-        setOriginalProfile(prev => ({ ...prev, profileImage: imageUrl }))
-        setPreview(imageUrl)
-        toast.success("Profile image updated")
-      } catch {
-        toast.error("Failed to upload image")
-      } finally {
-        setUploadingImage(false)
-        setImageFile(null)
-      }
-    }
-
-    uploadImage()
-  }, [imageFile])
-
-  const hasChanges =
-    JSON.stringify(profile) !== JSON.stringify(originalProfile)
-
-  if (loading) {
+  if (isLoading) {
     return (
       <MainLayout>
         <div className="flex justify-center items-center h-96">
@@ -157,10 +140,10 @@ export default function SettingsPage() {
                   type="file"
                   accept="image/*"
                   onChange={handleImageChange}
-                  disabled={uploadingImage}
+                  disabled={uploadImageMutation.isPending}
                   className="cursor-pointer"
                 />
-                {uploadingImage && (
+                {uploadImageMutation.isPending && (
                   <p className="text-sm text-blue-600 cursor-pointer">Uploading...</p>
                 )}
                 <p className="text-sm text-gray-500">JPG, PNG up to 5MB</p>
@@ -215,11 +198,11 @@ export default function SettingsPage() {
         {/* Save Button */}
         <div className="flex justify-end">
           <Button
-            onClick={saveProfile}
-            disabled={saving || !hasChanges || uploadingImage}
+            onClick={() => updateProfileMutation.mutate(profile)}
+            disabled={updateProfileMutation.isPending || !hasChanges || uploadImageMutation.isPending}
             className="bg-[#8B0000] hover:bg-[#700000] px-8"
           >
-            {saving ? "Saving..." : "Save Changes"}
+            {updateProfileMutation.isPending ? "Saving..." : "Save Changes"}
           </Button>
         </div>
       </div>

@@ -1,10 +1,11 @@
 "use client"
 
 import type React from "react"
-import { useState, useEffect } from "react"
+import { useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Lock, Eye, EyeOff } from "lucide-react"
 import { toast } from "sonner"
+import { useMutation } from "@tanstack/react-query"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -17,7 +18,6 @@ export default function ResetPasswordForm() {
 
   const [showNewPassword, setShowNewPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
   const [formData, setFormData] = useState({
     newPassword: "",
     confirmPassword: "",
@@ -30,7 +30,21 @@ export default function ResetPasswordForm() {
     }
   }, [email, router])
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const resetPasswordMutation = useMutation({
+    mutationFn: (data: { emailOrPhone: string; newPassword: string }) =>
+      authApi.resetPassword(data),
+    onSuccess: (response) => {
+      if (response.data.success) {
+        toast.success("Password reset successfully!")
+        router.push("/login")
+      }
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || "Failed to reset password")
+    },
+  })
+
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
 
     if (formData.newPassword !== formData.confirmPassword) {
@@ -43,23 +57,7 @@ export default function ResetPasswordForm() {
       return
     }
 
-    setIsLoading(true)
-
-    try {
-      const response = await authApi.resetPassword({
-        emailOrPhone: email,
-        newPassword: formData.newPassword,
-      })
-
-      if (response.data.success) {
-        toast.success("Password reset successfully!")
-        router.push("/login")
-      }
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || "Failed to reset password")
-    } finally {
-      setIsLoading(false)
-    }
+    resetPasswordMutation.mutate({ emailOrPhone: email, newPassword: formData.newPassword })
   }
 
   return (
@@ -125,10 +123,10 @@ export default function ResetPasswordForm() {
 
           <Button
             type="submit"
-            disabled={isLoading}
+            disabled={resetPasswordMutation.isPending}
             className="h-12 w-full rounded-xl bg-[#B91C1C] text-white"
           >
-            {isLoading ? "Updating..." : "Continue"}
+            {resetPasswordMutation.isPending ? "Updating..." : "Continue"}
           </Button>
         </form>
       </div>

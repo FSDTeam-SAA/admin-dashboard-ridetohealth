@@ -1,8 +1,9 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { toast } from "sonner"
+import { useMutation } from "@tanstack/react-query"
 import { Button } from "@/components/ui/button"
 import { authApi } from "@/lib/api"
 
@@ -12,7 +13,6 @@ export default function VerifyOTPForm() {
   const email = searchParams.get("email") || ""
   const type = searchParams.get("type") || "password_reset"
 
-  const [isLoading, setIsLoading] = useState(false)
   const [otp, setOtp] = useState(["", "", "", "", "", ""])
   const inputRefs = useRef<(HTMLInputElement | null)[]>([])
 
@@ -22,6 +22,29 @@ export default function VerifyOTPForm() {
       router.push("/forgot-password")
     }
   }, [email, router])
+
+  const verifyOTPMutation = useMutation({
+    mutationFn: (otpCode: string) => authApi.verifyOTP({ email, otp: otpCode, type }),
+    onSuccess: (response) => {
+      if (response.data.success) {
+        toast.success("OTP verified successfully!")
+        router.push(`/reset-password?email=${encodeURIComponent(email)}`)
+      }
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || "Invalid OTP")
+    },
+  })
+
+  const resendOTPMutation = useMutation({
+    mutationFn: () => authApi.requestPasswordReset({ emailOrPhone: email }),
+    onSuccess: () => {
+      toast.success("OTP resent successfully!")
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || "Failed to resend OTP")
+    },
+  })
 
   const handleChange = (index: number, value: string) => {
     if (value.length > 1) value = value.slice(-1)
@@ -48,35 +71,17 @@ export default function VerifyOTPForm() {
     inputRefs.current[Math.min(pastedData.length, 5)]?.focus()
   }
 
-  const handleResendOTP = async () => {
-    try {
-      await authApi.requestPasswordReset({ emailOrPhone: email })
-      toast.success("OTP resent successfully!")
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || "Failed to resend OTP")
-    }
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     const otpCode = otp.join("")
     if (otpCode.length !== 6) {
       toast.error("Please enter complete OTP")
       return
     }
-    setIsLoading(true)
-    try {
-      const response = await authApi.verifyOTP({ email, otp: otpCode, type })
-      if (response.data.success) {
-        toast.success("OTP verified successfully!")
-        router.push(`/reset-password?email=${encodeURIComponent(email)}`)
-      }
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || "Invalid OTP")
-    } finally {
-      setIsLoading(false)
-    }
+    verifyOTPMutation.mutate(otpCode)
   }
+
+  const isLoading = verifyOTPMutation.isPending
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50">
@@ -114,10 +119,11 @@ export default function VerifyOTPForm() {
             <span className="text-gray-600">Didn't receive OTP?</span>
             <button
               type="button"
-              onClick={handleResendOTP}
-              className="font-medium text-blue-600 hover:text-blue-500"
+              onClick={() => resendOTPMutation.mutate()}
+              disabled={resendOTPMutation.isPending}
+              className="font-medium text-blue-600 hover:text-blue-500 disabled:opacity-50"
             >
-              RESEND OTP
+              {resendOTPMutation.isPending ? "Sending..." : "RESEND OTP"}
             </button>
           </div>
 

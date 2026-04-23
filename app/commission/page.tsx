@@ -34,7 +34,10 @@ export default function CommissionPage() {
   // 1. Fetch Data
   const { data, isLoading } = useQuery({
     queryKey: ["commissions", page],
-    queryFn: () => commissionApi.getAll(page),
+    queryFn: async () => {
+      const res = await commissionApi.getAll(page);
+      return res.data;
+    },
   });
 
   // 2. Mutation for Delete
@@ -52,7 +55,7 @@ export default function CommissionPage() {
     },
   });
 
-  const responseBody = data?.data?.data;
+  const responseBody = data?.data;
   const commissions =
     responseBody?.data ||
     responseBody?.commissions ||

@@ -90,6 +90,7 @@ export default function DriverRequestPage() {
   const approveMutation = useMutation({
     mutationFn: (driverId: string) => driversApi.approve(driverId),
     onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["driver-requests"] });
       qc.invalidateQueries({ queryKey: ["drivers"] });
       toast.success("Driver approved");
     },
@@ -99,6 +100,7 @@ export default function DriverRequestPage() {
   const rejectMutation = useMutation({
     mutationFn: (driverId: string) => driversApi.reject(driverId),
     onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["driver-requests"] });
       qc.invalidateQueries({ queryKey: ["drivers"] });
       toast.success("Driver rejected");
     },
@@ -108,6 +110,7 @@ export default function DriverRequestPage() {
   const deleteMutation = useMutation({
     mutationFn: (driverId: string) => driversApi.delete(driverId),
     onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["driver-requests"] });
       qc.invalidateQueries({ queryKey: ["drivers"] });
       setDriverToDelete(null);
       toast.success("Driver request deleted");

@@ -6,6 +6,7 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Mail } from "lucide-react"
 import { toast } from "sonner"
+import { useMutation } from "@tanstack/react-query"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -13,25 +14,24 @@ import { authApi } from "@/lib/api"
 
 export default function ForgotPasswordPage() {
   const router = useRouter()
-  const [isLoading, setIsLoading] = useState(false)
   const [email, setEmail] = useState("")
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
-
-    try {
-      const response = await authApi.requestPasswordReset({ emailOrPhone: email })
-
+  const { mutate, isPending } = useMutation({
+    mutationFn: () => authApi.requestPasswordReset({ emailOrPhone: email }),
+    onSuccess: (response) => {
       if (response.data.success) {
         toast.success("OTP sent successfully!")
         router.push(`/verify-otp?email=${encodeURIComponent(email)}&type=password_reset`)
       }
-    } catch (error: any) {
+    },
+    onError: (error: any) => {
       toast.error(error.response?.data?.message || "Failed to send OTP")
-    } finally {
-      setIsLoading(false)
-    }
+    },
+  })
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    mutate()
   }
 
   return (
@@ -69,9 +69,9 @@ export default function ForgotPasswordPage() {
           <Button
             type="submit"
             className="h-12 w-full rounded-xl bg-[#B91C1C] text-base font-medium text-white hover:bg-[#991B1B]"
-            disabled={isLoading}
+            disabled={isPending}
           >
-            {isLoading ? "Sending..." : "Send OTP"}
+            {isPending ? "Sending..." : "Send OTP"}
           </Button>
         </form>
       </div>
